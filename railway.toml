@@ -1,0 +1,8 @@
+# Railway Deployment Configuration
+# This file configures the Railway platform to deploy your MCP server
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+restartPolicyType = "on_failure"
