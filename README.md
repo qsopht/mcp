@@ -29,13 +29,39 @@ A simple hello world MCP (Model Context Protocol) server built with Node.js and 
 
 ## Development
 
-Start the server in development mode:
+### Stdio Mode (Default)
+
+Start the server in stdio mode:
 
 ```bash
 npm run dev
 ```
 
+or with the compiled build:
+
+```bash
+npm start
+```
+
 The server will start and listen on stdio for incoming MCP protocol messages.
+
+### HTTP Mode
+
+Start the server in HTTP mode by setting the `PORT` environment variable:
+
+```bash
+PORT=8080 npm start
+```
+
+The server will start on the specified port and expose:
+- `POST /mcp` - MCP protocol endpoint
+- `GET /health` - Health check endpoint
+
+**Example health check:**
+```bash
+curl http://localhost:8080/health
+# Response: {"status":"ok"}
+```
 
 ## Building for Production
 
@@ -104,6 +130,17 @@ A simple tool that returns a personalized greeting.
 - Railway CLI installed locally (optional, but recommended)
 - GitHub repository (optional, for easier deployment)
 
+### How It Works
+
+This MCP server can run in two modes:
+
+1. **Stdio Mode** - Default, for local development or direct integration
+2. **HTTP Mode** - For cloud deployment (Railway, Render, etc.)
+
+When a `PORT` environment variable is set, the server automatically switches to HTTP mode and exposes:
+- `POST /mcp` - MCP protocol endpoint for clients
+- `GET /health` - Health check endpoint for load balancers
+
 ### Deploy Using GitHub
 
 1. Push your code to a GitHub repository
@@ -111,8 +148,13 @@ A simple tool that returns a personalized greeting.
 3. Click "Create New Project"
 4. Select "GitHub Repo"
 5. Authorize Railway and select your repository
-6. Railway will automatically detect the Node.js project
+6. Railway will automatically detect the Node.js project and set `PORT` for you
 7. Click "Deploy"
+
+Railway will automatically:
+- Set the `PORT` environment variable
+- Build your TypeScript code
+- Start the server in HTTP mode
 
 ### Deploy Using Railway CLI
 
@@ -130,17 +172,89 @@ A simple tool that returns a personalized greeting.
    railway up
    ```
 
+### Using the Deployed Server
+
+Once deployed to Railway, you'll get a public URL like `https://your-service.railway.app`.
+
+To use it with an MCP client:
+
+```javascript
+// Example: POST request to the MCP endpoint
+const response = await fetch('https://your-service.railway.app/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'my-client', version: '1.0.0' }
+    }
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
 ### Environment Variables
 
-If your server needs environment variables, you can set them in the Railway dashboard:
+The server automatically detects its running environment:
 
-1. Go to your project settings
-2. Navigate to the "Variables" tab
-3. Add your variables there
+- **With `PORT` set** - Runs in HTTP mode (Railway, Render, etc.)
+- **Without `PORT`** - Runs in stdio mode (local development, Docker exec)
+
+No additional configuration needed!
 
 ## Testing
 
-To test the MCP server, you'll need an MCP client. The server communicates via stdio using the MCP protocol.
+To test the MCP server, you'll need an MCP client. The server communicates via:
+
+- **Stdio** - Direct pipe communication for local integration
+- **HTTP Streamable** - HTTP endpoint for cloud deployment
+
+### Local Testing with Claude Desktop
+
+Configure Claude Desktop to use the local server in stdio mode:
+
+Create or edit `%APPDATA%\Claude\claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hello-world": {
+      "command": "node",
+      "args": ["C:\\path\\to\\mcp\\dist\\index.js"]
+    }
+  }
+}
+```
+
+Then restart Claude Desktop and the hello tool will be available.
+
+### Cloud Testing with Railway
+
+Once deployed to Railway, you can make HTTP requests to your server:
+
+```bash
+# Health check
+curl https://your-service.railway.app/health
+
+# MCP protocol request
+curl -X POST https://your-service.railway.app/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "hello",
+      "arguments": {"name": "Alice"}
+    }
+  }'
+```
 
 ## Troubleshooting
 
