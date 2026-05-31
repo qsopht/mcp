@@ -28,8 +28,11 @@ const server = new McpServer({
 });
 
 // Register the hello tool
-server.tool("hello", "Returns a hello world message", {
-  name: z.string().optional().describe("Name to greet"),
+server.registerTool("hello", {
+  description: "Returns a hello world message",
+  inputSchema: {
+    name: z.string().optional().describe("Name to greet"),
+  },
 }, async (args: { name?: string }) => {
   const name = args.name || "World";
   return {
