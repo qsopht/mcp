@@ -184,7 +184,6 @@ server.registerTool("buildweekendplan", {
       // Build batting lineup (9 players)
       const battingLineup = rankedPlayers.slice(0, 9).map((item, index) => {
         let reasoning = "";
-        const score = item.score;
         
         if (index === 0) {
           reasoning = `Lead-off: Highest OBP (${item.player.onBasePercentage.toFixed(3)}), good speed expected`;
